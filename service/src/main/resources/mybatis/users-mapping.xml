@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.simple.account.dao.UsersDao">
+
+    <resultMap id="UserModelMap" type="com.simple.account.model.UsersModel" >
+        <result column="id" property="userId" jdbcType="INTEGER" />
+        <result column="user_nick_name" property="userNickName" jdbcType="VARCHAR" />
+        <result column="user_true_name" property="userTrueName" jdbcType="VARCHAR" />
+        <result column="login_name" property="loginName" jdbcType="VARCHAR" />
+        <result column="pass_word" property="passWord" jdbcType="VARCHAR" />
+        <result column="user_mobile" property="userMobile" jdbcType="VARCHAR" />
+        <result column="head_pic" property="headPic" jdbcType="VARCHAR" />
+        <result column="wechat_open_Id" property="wechatOpenId" jdbcType="VARCHAR" />
+        <result column="wechat_public_open_Id" property="wechatPublicOpenId" jdbcType="VARCHAR" />
+        <result column="user_token" property="userToken" jdbcType="VARCHAR" />
+        <result column="union_id" property="unionId" jdbcType="VARCHAR" />
+        <result column="user_status" property="userStatus" jdbcType="INTEGER" />
+        <result column="user_type" property="userType" jdbcType="INTEGER" />
+        <result column="version" property="version" jdbcType="INTEGER" />
+        <result column="created_date" property="createdDate" javaType="java.util.Date"/>
+        <result column="created_name" property="createdName" jdbcType="VARCHAR" />
+        <result column="updated_date" property="updatedDate" javaType="java.util.Date"/>
+        <result column="updated_name" property="updatedName" jdbcType="VARCHAR" />
+    </resultMap>
+
+	<!-- 根据手机号查询用户信息@author hejinguo -->
+    <select id="selectUserByUserMobile" parameterType="java.lang.String" resultType="com.simple.account.model.UsersModel">
+       select  u.id userId,u.user_nick_name userNickName,u.login_name loginName,u.user_mobile userMobil,
+               u.head_pic headPic,u.wechat_open_Id wechatOpen_Id,u.wechat_public_open_Id wechatPublicOpenId,u.union_id unionId,u.user_token userToken,
+               u.user_status userStatus,u.version
+           from  users u  where u.user_mobile=#{userMobile}
+    </select>
+    
+    <!-- 新增用户信息@author hejinguo-->
+    <insert id="insertUsers"  parameterType="UsersModel" useGeneratedKeys="true" keyProperty="userId">
+        <![CDATA[    
+           insert into users(user_nick_name,login_name,pass_word,user_mobile,head_pic,wechat_open_Id,wechat_public_open_Id,union_id,user_token,user_status,created_date,created_name)
+                  values (#{userNickName},#{loginName},#{passWord},#{userMobile},#{headPic},#{wechatOpenId},#{wechatPublicOpenId},#{unionId},#{userToken},#{userStatus},now(),#{createdName})
+        ]]>
+    </insert>
+    
+    <!-- 新增用户明细  @author hejinguo-->
+    <insert id="insertUserDetail" parameterType="UserDetailModel" useGeneratedKeys="true" keyProperty="userDetailId">
+       <![CDATA[    
+           insert into user_detail(user_id,user_grender_wx,user_country_wx,user_province_wx,user_city_wx,created_date,created_name) 
+                  values (#{userId},#{userGrenderWx},#{userCountryWx},#{userProvinceWx},#{userCityWx},now(),#{createdName})      
+        ]]>
+    </insert>
+    
+    <!-- 更新用户Token信息@author hejinguo -->
+    <update id="updateUserToken" parameterType="java.util.HashMap">
+       update  users u set u.user_token=#{userToken},u.version=version+1,u.updated_date=now(),u.updated_name=#{userName}
+               where u.id=#{userId}
+    </update>
+    
+     <!--修改用户昵称  @author hejinguo-->
+    <update id="updateUserNickName" parameterType="UsersModel">
+        UPDATE users SET  user_nick_name=#{userNickName},head_pic=#{headPic},version=version+1,updated_date=now(), updated_name=#{updatedName} where  id = #{userId}
+    </update>
+   
+    <!--根据用户ID查询用户的基本信息-->
+    <select id="getUsersModel" parameterType="java.util.Map" resultMap="UserModelMap">
+      select * from users where id = #{userId}
+    </select>
+    
+     <!--根据ID查询用户信息@author hejinguo-->
+    <select id="getUserInfo" parameterType="java.lang.Integer"  resultType="com.simple.account.vo.UserInfoVo">
+        SELECT  u.id,u.user_nick_name userNickName,u.user_true_name userTrueName,u.head_pic headPic,de.user_grender_wx userGrenderWx,
+                de.province_id provinceId,de.province_name provinceName,de.city_id cityId,de.city_name cityName,
+                de.hospital_name hospitalName,de.position_name positionName,de.department_name departmentName
+               FROM users u,user_detail de  WHERE u.id=de.user_id  AND u.id=#{userId} 
+    </select>
+    
+    <!-- 修改用户信息@author  hejinguo -->
+   <update id="updateUserInfo" parameterType="com.simple.account.vo.UserInfoVo">
+      update users u set u.user_true_name=#{userTrueName}  where u.id=#{id}
+   </update>
+   
+   <!-- 根据登录名查询用户信息@author  hejinguo -->
+   <select id="selectUserByUserLoginName" parameterType="java.lang.String" resultMap="UserModelMap">
+       select * from users where login_name = #{userName}
+   </select>
+   
+   <!-- 根据id查询全部功能 @author hejinguo --> 
+    <select id="selectAllMenuById" parameterType="java.util.HashMap"  resultType="com.simple.account.vo.NodeVO">
+        select a.id,a.parent_id parentId,a.url,a.name,a.load_type loadType
+      		  from sys_menu a
+      		  where 1=1
+      		 <if test="isUnable==null or isUnable=='' or isUnable=0"> 
+      		     and a.is_useable = 1
+      		 </if> 
+             and not exists(
+               select t1.* from sys_menu t1,sys_menu t2
+              where t1.id=t2.parent_id and a.id=t1.id and a.id =#{id}
+             )   
+      		order by a.order_num,a.id
+    </select>
+    
+     <!-- 根据id查询功能信息@author hejinguo -->
+    <select id="selectMenuById" parameterType="java.lang.Long" resultType="com.simple.account.vo.NodeVO">
+        select a.id,a.parent_id parentId,a.url,a.name,a.load_type loadType
+      		   from sys_menu a where a.id=#{id}
+    </select>
+    
+    <!-- 根据PID查询地区信息@author hejinguo -->
+    <select id="getRegionList" parameterType="java.util.HashMap" resultType="com.simple.account.model.RegionModel">
+       select  r.id,r.name  from  sys_region  r  where r.pid=#{pid} and r.level=#{level}
+    </select>
+    
+    <!-- 根据unionId或openid查询公众号用户信息 -->
+    <select id="selectUserByunionIdOrOpenId" parameterType="java.util.HashMap" resultType="com.simple.account.model.UsersModel">
+        select  u.id userId,u.user_nick_name userNickName,u.login_name loginName,u.user_mobile userMobil,
+               u.head_pic headPic,u.union_id  unionId,u.wechat_open_Id wechatOpenId,u.wechat_public_open_Id wechatPublicOpenId,u.user_token userToken,
+               u.user_status userStatus,u.version
+           from  users u  where 
+            <if test="unionId!=null and unionId!=''">
+				   u.union_id=#{unionId}
+			</if> 
+			 <if test="openId!=null and openId!=''">
+				   u.wechat_public_open_Id=#{openId}
+			</if> 
+    </select>
+    
+</mapper> 

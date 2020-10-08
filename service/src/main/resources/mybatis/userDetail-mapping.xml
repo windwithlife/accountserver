@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.simple.account.dao.UserDetailDao">
+
+    <resultMap id="BaseResultMap" type="com.simple.account.model.UserDetailModel">
+        <result property="userDetailId" column="id" javaType="Integer" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" javaType="Integer" jdbcType="INTEGER"/>
+        <result property="userGrenderWx" column="user_grender_wx" javaType="java.lang.Byte" jdbcType="INTEGER"/>
+        <result property="userCountryWx" column="user_country_wx" javaType="string" jdbcType="VARCHAR"/>
+        <result property="userProvinceWx" column="user_province_wx" javaType="string" jdbcType="VARCHAR"/>
+        <result property="userCityWx" column="user_city_wx" javaType="string" jdbcType="VARCHAR"/>
+        <result property="identityCardFrontUrl" column="identity_card_front_url" javaType="string" jdbcType="VARCHAR"/>
+        <result property="identityCardBackUrl" column="identity_card_back_url" javaType="string" jdbcType="VARCHAR"/>
+        <result property="storeName" column="store_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="provinceId" column="province_id" javaType="Integer" jdbcType="INTEGER"/>
+        <result property="provinceName" column="province_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="cityId" column="city_id" javaType="Integer" jdbcType="INTEGER"/>
+        <result property="cityName" column="city_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="address" column="address" javaType="string" jdbcType="VARCHAR"/>
+        <result property="description" column="description" javaType="string" jdbcType="VARCHAR"/>
+        <result property="hospitalName" column="hospital_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="positionName" column="position_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="departmentName" column="department_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="createdName" column="create_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="createdDate" column="create_date" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+        <result property="updatedName" column="update_name" javaType="string" jdbcType="VARCHAR"/>
+        <result property="updatedDate" column="update_date" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--根据用户ID查询用户的详情信息-->
+    <select id="getUserDetailInfo" parameterType="java.util.Map" resultMap="BaseResultMap">
+        select * from user_detail where user_id = #{userId}
+    </select>
+    <!--修改用户所在地区-->
+    <update id="updateUserRegion" parameterType="com.simple.account.model.UserDetailModel">
+        update user_detail set province_id=#{provinceId},province_name=#{provinceName},city_id=#{cityId},city_name=#{cityName},
+         updated_name=#{updatedName},updated_date=now() where id = #{userDetailId} and user_id=#{userId}
+    </update>
+    <!--修改用户详细地址-->
+    <update id="updateUserAddress" parameterType="com.simple.account.model.UserDetailModel">
+        update user_detail set address=#{address},updated_name=#{updatedName},updated_date=now() where id = #{userDetailId} and user_id=#{userId}
+    </update>
+    
+    <!-- 修改用户明细信息 @author  hejinguo -->
+    <update id="updateUserDetailInfo" parameterType="com.simple.account.vo.UserInfoVo">
+       update user_detail  set   province_id=#{provinceId},province_name=#{provinceName},city_id=#{cityId},city_name=#{cityName},
+             hospital_name=#{hospitalName},department_name=#{departmentName}  where user_id=#{id}
+    </update>
+</mapper>
