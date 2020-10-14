@@ -4,16 +4,16 @@ import com.alibaba.fastjson.JSONObject;
 
 import com.simple.account.vo.UserInfoVo;
 import com.simple.common.api.GenericRequest;
-import com.simple.common.auth.token.JwtUtils;
-import com.simple.common.auth.token.UserTokenHelp;
+import com.simple.common.token.JwtUtils;
+import com.simple.common.token.UserTokenHelp;
 import com.simple.common.util.EmojiFilterUtil;
 import com.simple.common.util.TokenProccessor;
 import com.simple.common.util.WechatUtil;
 
 import com.simple.core.data.message.ResponseMessage;
 import com.simple.core.data.request.JsonMessage;
-import com.simple.common.auth.token.DesPcTokenUtil;
-import com.simple.common.auth.token.DesTokenUtil;
+import com.simple.common.token.DesPcTokenUtil;
+import com.simple.common.token.DesTokenUtil;
 import com.simple.common.error.ServiceException;
 import com.simple.core.redis.JedisDBEnum;
 import com.simple.core.redis.JedisHelper;
@@ -379,6 +379,7 @@ public class UsersService {
         String value = DesPcTokenUtil.encrypt(usersModel.getUserId() + "," + newToken);
         //step5:存入到redis
         if (StringUtils.isNotBlank(newToken)){
+            JedisHelper.getInstance().set(newToken, value, JedisDBEnum.PC);
             return newToken;
         }else{
             throw new ServiceException("failed to login in web");

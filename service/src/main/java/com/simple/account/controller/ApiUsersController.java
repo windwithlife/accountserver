@@ -5,7 +5,7 @@ import com.simple.core.data.message.ResponseMessage;
 import com.simple.core.data.request.JsonMessage;
 import com.simple.core.exception.CommonExceptionHandle;
 //import com.simple.core.spring.interceptor.annotation.LoginRequired;
-import com.simple.common.auth.token.ValidateLoginHelp;
+import com.simple.common.token.ValidateLoginHelp;
 import com.simple.account.model.RegionModel;
 import com.simple.account.vo.UserInfoVo;
 import org.slf4j.Logger;

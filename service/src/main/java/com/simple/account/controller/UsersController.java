@@ -13,8 +13,8 @@ import com.simple.core.data.request.JsonMessage;
 import com.simple.core.exception.CommonExceptionHandle;
 import com.simple.account.service.UsersService;
 import com.simple.common.error.ServiceHelper;
-import com.simple.common.auth.token.JwtUtils;
-import com.simple.common.auth.token.ValidateLoginHelp;
+import com.simple.common.token.JwtUtils;
+import com.simple.common.token.ValidateLoginHelp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -201,7 +201,7 @@ public class UsersController extends BaseController {
             HttpServletResponse response) {
 
         try {
-            JwtUtils.verifyNewToken(token);
+            JwtUtils.verifyToken(token);
             return BaseResponse.build().message(token);
         }catch (Exception ex) {
             return this.handleExeption(ex, "failed to register");
