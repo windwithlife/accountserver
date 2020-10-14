@@ -42,3 +42,12 @@ wechat :
     oauthUserInfo: https://api.weixin.qq.com/sns/userinfo?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN
 
 
+#redis参数配置
+redis:
+  hostName: 47.101.223.234
+  redisport: 6379
+  passWord: meetinglive
+  maxActive: 800
+  maxIdle: 100
+  maxWait: 1000
+  testOnBorrow: true

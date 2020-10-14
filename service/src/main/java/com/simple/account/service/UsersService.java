@@ -1,29 +1,28 @@
 package com.simple.account.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.simple.account.dto.AccountDto;
-import com.simple.account.dto.CreateAccountRequest;
-import com.simple.account.dto.GenericAccountResponse;
+
 import com.simple.account.vo.UserInfoVo;
 import com.simple.common.api.GenericRequest;
+import com.simple.common.auth.token.JwtUtils;
+import com.simple.common.auth.token.UserTokenHelp;
 import com.simple.common.util.EmojiFilterUtil;
 import com.simple.common.util.TokenProccessor;
 import com.simple.common.util.WechatUtil;
 
 import com.simple.core.data.message.ResponseMessage;
 import com.simple.core.data.request.JsonMessage;
-import com.simple.core.encrypt.DesPcTokenUtil;
-import com.simple.core.encrypt.DesTokenUtil;
+import com.simple.common.auth.token.DesPcTokenUtil;
+import com.simple.common.auth.token.DesTokenUtil;
 import com.simple.common.error.ServiceException;
 import com.simple.core.redis.JedisDBEnum;
 import com.simple.core.redis.JedisHelper;
-import com.simple.core.token.UserTokenHelp;
+
 import com.simple.account.dao.UserDetailDao;
 import com.simple.account.dao.UsersDao;
 import com.simple.account.model.UserDetailModel;
 import com.simple.account.model.UsersModel;
-import com.simple.account.vo.MenuTreeVO;
-import com.simple.account.vo.NodeVO;
+
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -42,9 +41,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
-import javax.validation.Valid;
+
 import javax.ws.rs.core.Response;
 import java.util.*;
 
@@ -360,10 +358,8 @@ public class UsersService {
 
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-    public Map<String, Object> login(String username, String password) throws Exception {
+    public String login(String username, String password) throws Exception {
         //返回信息
-        Map<String, Object> returnMap = new HashMap<String, Object>();
-        //step2:根据登录名查询用户信息
         UsersModel usersModel = this.usersDao.selectUserByUserLoginName(username);
         if (usersModel == null) {
             logger.error("用户信息不存在,参数信息:userName--->{}", username);
@@ -377,22 +373,17 @@ public class UsersService {
             throw new ServiceException("登录密码错误!");
         }
 
-        //新token以及加密值
-        //String newToken = TokenProccessor.getInstance().makeToken();
+        //新token以及加密
         //String newToken = this.createOIDCAccessToken(username, password);
-        String newToken ="tokentest";
+        String newToken = JwtUtils.createToken(null); //"tokentest";
         String value = DesPcTokenUtil.encrypt(usersModel.getUserId() + "," + newToken);
         //step5:存入到redis
         if (StringUtils.isNotBlank(newToken)){
-            JedisHelper.getInstance().set(newToken, value, JedisDBEnum.PC);
-            returnMap.put("token", newToken);
-            returnMap.put("newUserMessage", "登录成功！");
+            return newToken;
         }else{
-            returnMap.put("token", newToken);
-            returnMap.put("newUserMessage", "登录失败");
+            throw new ServiceException("failed to login in web");
         }
 
-        return returnMap;
     }
     /**
      * pc用户登录

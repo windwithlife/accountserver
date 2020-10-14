@@ -5,12 +5,12 @@ import com.github.structlog4j.SLoggerFactory;
 import com.simple.account.dao.AccountDao;
 import com.simple.account.dto.AccountDto;
 import com.simple.account.model.Account;
-import com.simple.core.exception.ServiceHelper;
+
 import com.simple.common.api.ResultCode;
-import com.simple.common.auth.AuthConstant;
-import com.simple.common.auth.AuthContext;
+
 import com.simple.common.env.EnvConfig;
 import com.simple.common.error.ServiceException;
+import com.simple.common.error.ServiceHelper;
 import com.simple.common.props.AppProps;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -18,8 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+
 
 @Service
 @RequiredArgsConstructor

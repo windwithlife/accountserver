@@ -6,26 +6,22 @@ import com.simple.common.auth.Sessions;
 import com.simple.common.controller.BaseController;
 import com.simple.common.api.BaseResponse;
 import com.simple.common.api.GenericRequest;
-import com.simple.common.api.GenericResponse;
-import com.simple.common.auth.AuthContext;
+
 import com.simple.common.error.ServiceException;
 import com.simple.core.data.message.ResponseMessage;
 import com.simple.core.data.request.JsonMessage;
 import com.simple.core.exception.CommonExceptionHandle;
 import com.simple.account.service.UsersService;
 import com.simple.common.error.ServiceHelper;
-import com.simple.core.token.ValidateLoginHelp;
+import com.simple.common.auth.token.JwtUtils;
+import com.simple.common.auth.token.ValidateLoginHelp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 用户管理控制层
@@ -71,8 +67,7 @@ public class UsersController extends BaseController {
         String password = req.getString("password");
         try {
             //step1:pc用户登录
-            Map<String, Object> resultMap = this.usersService.login(username, password);
-            String token = (String)resultMap.get("token");
+            String token = this.usersService.login(username, password);
             Sessions.writeToken(token, "test.com", true, response);
             return BaseResponse.build();
         } catch (Exception e) {
@@ -82,61 +77,6 @@ public class UsersController extends BaseController {
 
     }
 
-    /**
-     * pc用户登录
-     */
-    @PostMapping(value = { "/userLogin" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage userLogin(@RequestBody JsonMessage jsonMessage,
-                                                      HttpServletRequest request,
-                                                      HttpServletResponse response) {
-        AuthContext.getAuthz();
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
-        try {
-            //step1:pc用户登录
-            Map<String, Object> resultMap = this.usersService.userLogin(jsonMessage);
-            String token = (String)resultMap.get("token");
-            //step3:返回结果
-            resMessage.addKey$Value("token", token);
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
-            this.writeCookie(true,token,"test.com",response);
-            this.writeHeaderToken(token,response);
-        } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
-        }
-        return resMessage;
-    }
-
-    /**
-     * 获取主页菜单列表
-     * @param jsonMessage
-     * @param request
-     * @param response
-     * @return
-     */
-//    @PostMapping(value = { "/getUserMenu" }, consumes = { "application/json" }, produces = { "application/json" })
-//    //@LoginRequired
-//    public @ResponseBody ResponseMessage getUserMenu(@RequestBody JsonMessage jsonMessage,
-//                                                   HttpServletRequest request,
-//                                                   HttpServletResponse response) {
-//        //返回对象
-//        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
-//        try {
-//            //step1:获取主页菜单
-//            Map<String, Object> resultMap = this.usersService.getUserMenu(jsonMessage);
-//            //step3:返回结果
-//            resMessage.addKey$Value("id", resultMap.get("id"));
-//            resMessage.addKey$Value("userTrueName", resultMap.get("userTrueName"));
-//            resMessage.addKey$Value("headPic", resultMap.get("headPic"));
-//            resMessage.addKey$Value("menuList", resultMap.get("menuList"));
-//            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-//            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
-//        } catch (Exception e) {
-//            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
-//        }
-//        return resMessage;
-//    }
 
     /**
      * 获取讲师列表
@@ -249,36 +189,35 @@ public class UsersController extends BaseController {
     @PostMapping(value = { "/validateUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
     public BaseResponse validateUserLogin(HttpServletRequest request,
                                                            HttpServletResponse response,
-                                                           @RequestHeader(AuthConstant.AUTHENTICATION_HEADER) String auth) {
-
-        return  ValidateLoginHelp.validateToken(auth);
+                                                           @RequestHeader(AuthConstant.AUTHENTICATION_HEADER) String token) {
+        return  ValidateLoginHelp.validateToken(token);
     }
 
 
 
-    private  void writeCookie(boolean rememberMe, String token, String domainName, HttpServletResponse response) {
-        long SHORT_SESSION = TimeUnit.HOURS.toMillis(12L);
-        long LONG_SESSION = TimeUnit.HOURS.toMillis(720L);
-        long duration;
-        if (rememberMe) {
-            duration = LONG_SESSION;
-        } else {
-            duration = SHORT_SESSION;
+    @GetMapping(value = { "/verifyToken" }, produces = { "application/json" })
+    public @ResponseBody BaseResponse testVerify(@RequestHeader("token") String token,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        try {
+            JwtUtils.verifyNewToken(token);
+            return BaseResponse.build().message(token);
+        }catch (Exception ex) {
+            return this.handleExeption(ex, "failed to register");
         }
-
-        int maxAge = (int)(duration / 1000L);
-        //String token = Sign.generateSessionToken(userId, signingSecret, support, duration);
-        //String token = JwtUtils.createToken2(userId);
-        Cookie cookie = new Cookie("Authentication", token);
-        cookie.setPath("/");
-        cookie.setDomain(domainName);
-        cookie.setMaxAge(maxAge);
-        cookie.setHttpOnly(true);
-        response.addCookie(cookie);
     }
 
-    private  void writeHeaderToken(String token, HttpServletResponse response) {
-        response.addHeader("token", token);
+    @GetMapping(value = { "/jwks" }, produces = { "application/json" })
+    public @ResponseBody Object testJWKs(
+                                                 HttpServletRequest request,
+                                                 HttpServletResponse response) {
+        try {
+            return JwtUtils.createJWKs();
+
+        }catch (Exception ex) {
+            return this.handleExeption(ex, "failed to register");
+        }
     }
 
 }

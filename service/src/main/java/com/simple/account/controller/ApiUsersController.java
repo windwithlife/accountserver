@@ -5,7 +5,7 @@ import com.simple.core.data.message.ResponseMessage;
 import com.simple.core.data.request.JsonMessage;
 import com.simple.core.exception.CommonExceptionHandle;
 //import com.simple.core.spring.interceptor.annotation.LoginRequired;
-import com.simple.core.token.ValidateLoginHelp;
+import com.simple.common.auth.token.ValidateLoginHelp;
 import com.simple.account.model.RegionModel;
 import com.simple.account.vo.UserInfoVo;
 import org.slf4j.Logger;
@@ -29,35 +29,35 @@ public class ApiUsersController {
     @Autowired
     private ApiUsersService     apiUsersService;
 
-    /**
-     * 验证当前用户是否登录
-     * @param jsonMessage
-     * @return
-     */
-    @PostMapping(value = { "/validateUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage validateUserLogin(HttpServletRequest request,
-                                             HttpServletResponse response,
-                                             @RequestBody JsonMessage jsonMessage) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
-        try {
-            ResponseMessage responseMessage = ValidateLoginHelp.validateUserLogin(jsonMessage);
-            if (responseMessage.getStatus() == ResponseMessage.SUCCESS_CODE) {
-                resMessage.addKey$Value("isLogin", 1);
-                resMessage.setMessage(responseMessage.getMessage());
-                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-                return resMessage;
-            } else {
-                resMessage.addKey$Value("isLogin", 0);
-                resMessage.setMessage(responseMessage.getMessage());
-                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-                return resMessage;
-            }
-        } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
-        }
-        return resMessage;
-    }
+//    /**
+//     * 验证当前用户是否登录
+//     * @param jsonMessage
+//     * @return
+//     */
+//    @PostMapping(value = { "/validateUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
+//    public @ResponseBody ResponseMessage validateUserLogin(HttpServletRequest request,
+//                                             HttpServletResponse response,
+//                                             @RequestBody JsonMessage jsonMessage) {
+//        //返回对象
+//        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+//        try {
+//            ResponseMessage responseMessage = ValidateLoginHelp.validateUserLogin(jsonMessage);
+//            if (responseMessage.getStatus() == ResponseMessage.SUCCESS_CODE) {
+//                resMessage.addKey$Value("isLogin", 1);
+//                resMessage.setMessage(responseMessage.getMessage());
+//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
+//                return resMessage;
+//            } else {
+//                resMessage.addKey$Value("isLogin", 0);
+//                resMessage.setMessage(responseMessage.getMessage());
+//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
+//                return resMessage;
+//            }
+//        } catch (Exception e) {
+//            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+//        }
+//        return resMessage;
+//    }
 
     /**
      * 用户退出登录
@@ -198,34 +198,34 @@ public class ApiUsersController {
         return resMessage;
     }
     
-    /**
-     * 公众号验证当前用户是否登录
-     * @param jsonMessage
-     * @return
-     */
-    @PostMapping(value = { "/validateWechatPublicUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage validateWechatPublicUserLogin(HttpServletRequest request,
-                                             HttpServletResponse response,
-                                             @RequestBody JsonMessage jsonMessage) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
-        try {
-            ResponseMessage responseMessage = ValidateLoginHelp.validateUserLogin(jsonMessage);
-            if (responseMessage.getStatus() == ResponseMessage.SUCCESS_CODE) {
-                resMessage.addKey$Value("isLogin", 1);
-                resMessage.setMessage(responseMessage.getMessage());
-                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-                return resMessage;
-            } else {
-                resMessage.addKey$Value("isLogin", 0);
-                resMessage.setMessage(responseMessage.getMessage());
-                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-                return resMessage;
-            }
-        } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
-        }
-        return resMessage;
-    }
+//    /**
+//     * 公众号验证当前用户是否登录
+//     * @param jsonMessage
+//     * @return
+//     */
+//    @PostMapping(value = { "/validateWechatPublicUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
+//    public @ResponseBody ResponseMessage validateWechatPublicUserLogin(HttpServletRequest request,
+//                                             HttpServletResponse response,
+//                                             @RequestBody JsonMessage jsonMessage) {
+//        //返回对象
+//        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+//        try {
+//            ResponseMessage responseMessage = ValidateLoginHelp.validateUserLogin(jsonMessage);
+//            if (responseMessage.getStatus() == ResponseMessage.SUCCESS_CODE) {
+//                resMessage.addKey$Value("isLogin", 1);
+//                resMessage.setMessage(responseMessage.getMessage());
+//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
+//                return resMessage;
+//            } else {
+//                resMessage.addKey$Value("isLogin", 0);
+//                resMessage.setMessage(responseMessage.getMessage());
+//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
+//                return resMessage;
+//            }
+//        } catch (Exception e) {
+//            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+//        }
+//        return resMessage;
+//    }
 
 }
