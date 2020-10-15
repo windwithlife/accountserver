@@ -1,5 +1,5 @@
 logging:
-  config: /etc/staffjoy/logback-spring.xml
+  config: /etc/simple/logback-spring.xml
 
 #小程序及公众号配置
 wechat :
