@@ -31,3 +31,8 @@ spring:
     host: 47.101.223.234
     port: 6379
     password: meetinglive
+
+server:
+  port: 8888
+  servlet:
+    context-path: /simple/account

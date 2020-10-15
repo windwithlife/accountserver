@@ -27,4 +27,4 @@ simple:
 
 server:
   servlet:
-    context-path: /meeting-cms
+    context-path: /simple/account

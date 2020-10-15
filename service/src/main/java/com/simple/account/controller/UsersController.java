@@ -82,7 +82,7 @@ public class UsersController extends BaseController {
     }
 
     @LoginRequired
-    @PostMapping(value = {"/testLogin"}, produces = {"application/json"})
+    @PostMapping(value = {"/testAuthentication"}, produces = {"application/json"})
     public @ResponseBody Object testLogin(@RequestBody GenericRequest req) {
         try {
             return BaseResponse.build().message(req.getString("username"));
