@@ -17,3 +17,19 @@ wechat :
     oauthAccessToken: https://api.weixin.qq.com/sns/oauth2/access_token?appid=APPID&secret=APPSECRET&code=CODE&grant_type=authorization_code
     oauthUserInfo: https://api.weixin.qq.com/sns/userinfo?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN
 
+#redis参数配置
+redis:
+  hostName: 47.101.223.234
+  redisport: 6379
+  passWord: meetinglive
+  maxActive: 800
+  maxIdle: 100
+  maxWait: 1000
+  testOnBorrow: true
+
+spring:
+  redis:
+    database: 0
+    host: 47.101.223.234
+    port: 6379
+    password: meetinglive

@@ -4,6 +4,10 @@ import com.alibaba.fastjson.JSONObject;
 
 import com.simple.account.vo.UserInfoVo;
 import com.simple.common.api.GenericRequest;
+import com.simple.common.auth.AuthConstant;
+import com.simple.common.auth.Authorize;
+import com.simple.common.auth.Sessions;
+import com.simple.common.error.ServiceHelper;
 import com.simple.common.token.JwtUtils;
 import com.simple.common.token.UserTokenHelp;
 import com.simple.common.util.EmojiFilterUtil;
@@ -76,7 +80,7 @@ public class UsersService {
     }
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-    public boolean register(GenericRequest req) throws Exception {
+    public boolean register(GenericRequest req) {
 
         //step1:获取全部请求参数并验证
         String username = req.getString("username");
@@ -372,19 +376,9 @@ public class UsersService {
             logger.error("用户登录密码错误,参数信息:userName--->{}", username);
             throw new ServiceException("登录密码错误!");
         }
-
-        //新token以及加密
-        //String newToken = this.createOIDCAccessToken(username, password);
-        String newToken = JwtUtils.createToken(null); //"tokentest";
-        String value = DesPcTokenUtil.encrypt(usersModel.getUserId() + "," + newToken);
-        //step5:存入到redis
-        if (StringUtils.isNotBlank(newToken)){
-            JedisHelper.getInstance().set(newToken, value, JedisDBEnum.PC);
-            return newToken;
-        }else{
-            throw new ServiceException("failed to login in web");
-        }
-
+        Integer userId = usersModel.getUserId();
+        String token = Sessions.createTokenWithUserInfo(userId, String.valueOf(userId), usersModel.getWechatOpenId(), "guest");
+        return token;
     }
     /**
      * pc用户登录

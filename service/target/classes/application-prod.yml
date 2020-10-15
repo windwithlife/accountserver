@@ -25,3 +25,9 @@ redis:
   maxIdle: 100
   maxWait: 1000
   testOnBorrow: true
+spring:
+  redis:
+    database: 0
+    host: 47.101.223.234
+    port: 6379
+    password: meetinglive

@@ -16,11 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
-/**
- * 微信管理控制层
- * @author hejinguo
- * @version $Id: WechatController.java, v 0.1 2020年7月13日 上午11:10:43
- */
+
 @RestController
 @RequestMapping("api/wechatService")
 public class ApiWechatController {
