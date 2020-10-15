@@ -56,15 +56,12 @@ public class UsersController extends BaseController {
                        HttpServletResponse response) {
         String username = req.getString("username");
         String password = req.getString("password");
-        try {
-            //step1:pc用户登录
-            String token = this.usersService.login(username, password);
-            Sessions.writeToken(token, "test.com", true, response);
-            return BaseResponse.build();
-        } catch (Exception e) {
-            BaseResponse res = ServiceHelper.handleControllerException(e, "failed to login");
-            return res;
-        }
+
+        //step1:pc用户登录
+        String token = this.usersService.login(username, password);
+        Sessions.writeToken(token, "test.com", true, response);
+        return BaseResponse.build();
+
 
     }
 
@@ -83,7 +80,8 @@ public class UsersController extends BaseController {
 
     @LoginRequired
     @PostMapping(value = {"/testAuthentication"}, produces = {"application/json"})
-    public @ResponseBody Object testLogin(@RequestBody GenericRequest req) {
+    public @ResponseBody
+    Object testLogin(@RequestBody GenericRequest req) {
         try {
             return BaseResponse.build().message(req.getString("username"));
         } catch (Exception ex) {
@@ -93,13 +91,15 @@ public class UsersController extends BaseController {
 
     @Authorize("guest")
     @PostMapping(value = {"/testAuthorize"}, produces = {"application/json"})
-    public @ResponseBody Object testAuth(@RequestBody GenericRequest req) {
+    public @ResponseBody
+    Object testAuth(@RequestBody GenericRequest req) {
         try {
             return BaseResponse.build().message(req.getString("username"));
         } catch (Exception ex) {
             return this.handleExeption(ex, "failed obtain jwk");
         }
     }
+
     @GetMapping(value = {"/jwks"}, produces = {"application/json"})
     public @ResponseBody
     Object testJWKs(

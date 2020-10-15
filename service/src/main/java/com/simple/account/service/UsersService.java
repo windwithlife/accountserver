@@ -362,7 +362,7 @@ public class UsersService {
 
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-    public String login(String username, String password) throws Exception {
+    public String login(String username, String password) {
         //返回信息
         UsersModel usersModel = this.usersDao.selectUserByUserLoginName(username);
         if (usersModel == null) {
