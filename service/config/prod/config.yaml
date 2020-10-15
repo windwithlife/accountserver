@@ -19,9 +19,9 @@ data:
   ALIYUN_ACCESS_SECRET: YOUR_ALIYUN_ACCESS_SECRET
   RECAPTCHA_PUBLIC: test-recaptcha-public
   RECAPTCHA_PRIVATE: test-recaptcha-private
-  ACCOUNT_DATASOURCE_URL: jdbc:mysql://test.koudaibook.com:30006/mydb?useUnicode=true&characterEncoding=utf-8
+  ACCOUNT_DATASOURCE_URL: jdbc:mysql://db.koudaibook.com:30006/mydb?useUnicode=true&characterEncoding=utf-8
   ACCOUNT_DATASOURCE_USERNAME: root
   ACCOUNT_DATASOURCE_PASSWORD: Password!&
-  NEWS_DATASOURCE_URL: jdbc:mysql://testdb.koudaibook.com:30006/mydb?useUnicode=true&characterEncoding=utf-8
+  NEWS_DATASOURCE_URL: jdbc:mysql://db.koudaibook.com:30006/mydb?useUnicode=true&characterEncoding=utf-8
   NEWS_DATASOURCE_USERNAME: root
-  NEWS_DATASOURCE_PASSWORD: "123456"
+  NEWS_DATASOURCE_PASSWORD: Password!&
