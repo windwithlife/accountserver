@@ -61,13 +61,6 @@
             <artifactId>jsr311-api</artifactId>
             <version>1.1-ea</version>
         </dependency>
-        <dependency>
-            <groupId>com.simple</groupId>
-            <artifactId>account-api</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
-
 
         <dependency>
             <groupId>com.alibaba</groupId>
