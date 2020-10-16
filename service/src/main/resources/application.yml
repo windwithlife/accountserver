@@ -9,11 +9,11 @@ spring:
     url: ${ACCOUNT_DATASOURCE_URL}
     username: ${ACCOUNT_DATASOURCE_USERNAME}
     password: ${ACCOUNT_DATASOURCE_PASSWORD}
-  redis:
-    database: 0
-    host: images.e-healthcare.net
-    port: 6379
-    password: meetinglive
+#  redis:
+#    database: 0
+#    host: images.e-healthcare.net
+#    port: 6379
+#    password: meetinglive
 
 simple:
   common:
@@ -26,3 +26,17 @@ simple:
 server:
   servlet:
     context-path: /simple/account
+
+#redis参数配置
+redis:
+  hostName: 47.101.223.234
+  redisport: 6379
+  passWord: meetinglive
+  maxActive: 800
+  maxIdle: 100
+  maxWait: 1000
+  testOnBorrow: true
+  database: '0'
+  host: images.e-healthcare.net
+  port: 6379
+  password: meetinglive

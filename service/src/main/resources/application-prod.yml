@@ -25,12 +25,10 @@ redis:
   maxIdle: 100
   maxWait: 1000
   testOnBorrow: true
-spring:
-  redis:
-    database: 0
-    host: images.e-healthcare.net
-    port: 6379
-    password: meetinglive
+  database: '0'
+  host: images.e-healthcare.net
+  port: 6379
+  password: meetinglive
 
 server:
   servlet:

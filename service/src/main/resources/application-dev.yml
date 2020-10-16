@@ -9,11 +9,11 @@ spring:
     hibernate:
       ddl-auto: update
       dialect: MySQL5Dialect
-  redis:
-    database: 0
-    host: 47.101.223.234
-    port: 6379
-    password: meetinglive
+#  redis:
+#    database: 0
+#    host: 47.101.223.234
+#    port: 6379
+#    password: meetinglive
 
 
 server:
@@ -57,3 +57,7 @@ redis:
   maxIdle: 100
   maxWait: 1000
   testOnBorrow: true
+  database: '0'
+  host: images.e-healthcare.net
+  port: 6379
+  password: meetinglive
