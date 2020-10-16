@@ -13,7 +13,6 @@ com/simple/account/service/UsersService.class
 com/simple/account/service/ApiUsersService.class
 com/simple/account/vo/RecordLiveVO.class
 com/simple/core/wechat/beans/oauth2/Oauth2AccessToken.class
-com/simple/account/service/AccountService.class
 com/simple/account/model/UsersModel.class
 com/simple/core/data/pageBean/AbsPagingBean.class
 com/simple/account/dto/AdvertVO.class

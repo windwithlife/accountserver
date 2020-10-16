@@ -40,7 +40,6 @@
 /Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/account/dao/AccountDao.java
 /Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/core/httpClient/util/HttpClientUtil.java
 /Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/core/wechat/WechatUserQrCodeHelp.java
-/Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/account/service/AccountService.java
 /Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/core/wechat/AccessTokenUtil.java
 /Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/account/model/UsersModel.java
 /Users/ctrip/projects/ehealthcare/sourcecode/accountserver/service/src/main/java/com/simple/account/controller/ApiUsersController.java

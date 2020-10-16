@@ -9,9 +9,6 @@ spring:
     url: ${ACCOUNT_DATASOURCE_URL}
     username: ${ACCOUNT_DATASOURCE_USERNAME}
     password: ${ACCOUNT_DATASOURCE_PASSWORD}
-  redis:
-    host: images.e-healthcare.net
-    password: meetinglive
 
 simple:
   common:
