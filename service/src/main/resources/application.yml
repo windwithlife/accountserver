@@ -11,7 +11,7 @@ spring:
     password: ${ACCOUNT_DATASOURCE_PASSWORD}
   redis:
     database: 0
-    host: 47.101.223.234
+    host: images.e-healthcare.net
     port: 6379
     password: meetinglive
 
