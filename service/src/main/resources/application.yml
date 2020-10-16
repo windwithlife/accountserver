@@ -6,22 +6,21 @@ spring:
   application:
     name: account-service
   datasource:
-    url: ${NEWS_DATASOURCE_URL}
-    username: ${NEWS_DATASOURCE_USERNAME}
-    password: ${NEWS_DATASOURCE_PASSWORD}
-    tomcat:
-      test-while-idle: true
-      validation-query: SELECT 1
-  jpa:
-    hibernate:
-      ddl-auto: validate
+    url: ${ACCOUNT_DATASOURCE_URL}
+    username: ${ACCOUNT_DATASOURCE_USERNAME}
+    password: ${ACCOUNT_DATASOURCE_PASSWORD}
+  redis:
+    database: 0
+    host: 47.101.223.234
+    port: 6379
+    password: meetinglive
 
-staffjoy:
+simple:
   common:
     sentry-dsn: ${SENTRY_DSN}
     deploy-env: ${DEPLOY:V2}
   signing-secret: ${SIGNING_SECRET}
-  account-service-endpoint: ${ACCOUNT_SERVICE_ENDPOINT:http://account-service:8080}
+  account-service-endpoint: ${ACCOUNT_SERVICE_ENDPOINT:http://account-server-server:80}
 
 
 server:

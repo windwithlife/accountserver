@@ -33,6 +33,5 @@ spring:
     password: meetinglive
 
 server:
-  port: 8888
   servlet:
     context-path: /simple/account
