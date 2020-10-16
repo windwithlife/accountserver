@@ -17,6 +17,11 @@ wechat :
     oauthUserInfo: https://api.weixin.qq.com/sns/userinfo?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN
 
 #redis参数配置
+spring:
+  redis:
+    host: images.e-healthcare.net
+    password: meetinglive
+
 redis:
   hostName: 47.101.223.234
   redisport: 6379
