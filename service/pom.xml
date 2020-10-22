@@ -50,11 +50,7 @@
             <groupId>com.simple</groupId>
             <artifactId>common-lib</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
-            <version>10.0.0</version>
-        </dependency>
+
 
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -67,7 +63,12 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.61</version>
         </dependency>
-
+        <!-- NOSQL begin -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+        <!-- NOSQL end -->
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
@@ -80,6 +81,15 @@
             </exclusions>
         </dependency>
 
+        <!-- httpclient -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
         <!-- 工具包 -->
         <dependency>
             <groupId>commons-lang</groupId>

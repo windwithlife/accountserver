@@ -19,7 +19,7 @@ wechat :
 #redis参数配置
 spring:
   redis:
-    host: images.e-healthcare.net
+    host: redis-standalone
     password: meetinglive
 
 redis:

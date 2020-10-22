@@ -4,24 +4,19 @@ import com.alibaba.fastjson.JSONObject;
 
 import com.simple.account.vo.UserInfoVo;
 import com.simple.common.api.GenericRequest;
-import com.simple.common.auth.AuthConstant;
-import com.simple.common.auth.Authorize;
 import com.simple.common.auth.Sessions;
-import com.simple.common.error.ServiceHelper;
-import com.simple.common.token.JwtUtils;
-import com.simple.common.token.UserTokenHelp;
-import com.simple.common.util.EmojiFilterUtil;
-import com.simple.common.util.TokenProccessor;
-import com.simple.common.util.WechatUtil;
 
-import com.simple.core.data.message.ResponseMessage;
-import com.simple.core.data.request.JsonMessage;
+import com.simple.common.utils.EmojiFilterUtil;
+import com.simple.common.utils.TokenProccessor;
+import com.simple.common.utils.WechatUtil;
+import com.simple.common.token.UserTokenHelp;
+import com.simple.common.redis.JedisHelper;
+import com.simple.common.redis.JedisDBEnum;
+import com.simple.common.data.message.ResponseMessage;
+import com.simple.common.data.request.JsonMessage;
 import com.simple.common.token.DesPcTokenUtil;
 import com.simple.common.token.DesTokenUtil;
 import com.simple.common.error.ServiceException;
-import com.simple.core.redis.JedisDBEnum;
-import com.simple.core.redis.JedisHelper;
-
 import com.simple.account.dao.UserDetailDao;
 import com.simple.account.dao.UsersDao;
 import com.simple.account.model.UserDetailModel;
@@ -29,15 +24,7 @@ import com.simple.account.model.UsersModel;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleMappingResource;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,111 +98,7 @@ public class UsersService {
         return true;
     }
 
-    public boolean createOIDCAccount(String username, String password) {
 
-        Keycloak keycloak = KeycloakBuilder.builder()
-                .serverUrl("http://auth.e-healthcare.net/auth")
-                .grantType(OAuth2Constants.PASSWORD)
-                .realm("master")
-                .clientId("admin-cli")
-                .username("admin")
-                .password("admin")
-                .resteasyClient(
-                        new ResteasyClientBuilder()
-                                .connectionPoolSize(10).build()
-                ).build();
-        RealmResource realmResource = keycloak.realm("healthcare");
-
-        UserRepresentation user = new UserRepresentation();
-        // 设置登录账号
-        user.setUsername(username);
-        // 设置账号“启用”
-        user.setEnabled(true);
-        //user.setEmail(request.getEmail());
-        user.setFirstName("zhang");
-        user.setLastName("yq");
-
-        //set password
-        List<CredentialRepresentation> credentials = new ArrayList<CredentialRepresentation>();
-        CredentialRepresentation cr = new CredentialRepresentation();
-        cr.setType(CredentialRepresentation.PASSWORD);
-        cr.setValue(password);
-        cr.setTemporary(false);
-        credentials.add(cr);
-        user.setCredentials(credentials);
-
-        //设置自定义用户属性
-        Map<String, List<String>> attributes = new HashMap<String, List<String>>();
-        List<String> list = new ArrayList<String>();
-        list.add("音乐");
-        list.add("美术");
-        attributes.put("favorite", list);
-        user.setAttributes(attributes);
-
-        // 创建用户
-        Response.StatusType result = realmResource.users().create(user).getStatusInfo();
-        String resultText = result.getReasonPhrase() + String.valueOf(result.getStatusCode());
-        if (result.getStatusCode() != 201) {
-            System.out.println("the result of create user******************" + resultText);
-            throw new ServiceException("failed to create new user!");
-        }
-
-
-        try {
-
-            // 根据 username 查找用户
-            UserRepresentation getUser = realmResource
-                    .users()
-                    .search(username)
-                    .get(0);
-
-            // 取得指定用户的 roleMappingResource
-            RoleMappingResource roleMappingResource = realmResource
-                    .users()
-                    .get(getUser.getId())
-                    .roles();
-
-            // 为用户分配Realm角色
-
-            RoleRepresentation realmRole = realmResource
-                    .roles()
-                    .get("operator")
-                    .toRepresentation();
-
-            roleMappingResource.realmLevel().add(Arrays.asList(realmRole));
-        }catch(Exception ex){
-            throw new ServiceException("failed to add role to new user!");
-        }
-
-        return true;
-    }
-
-    public String createOIDCAccessToken(String name, String password) {
-        String accessToken = null;
-        try {
-            Keycloak keycloak = KeycloakBuilder.builder()
-                    .serverUrl("http://auth.e-healthcare.net/auth")
-                    .grantType(OAuth2Constants.PASSWORD)
-                    .username(name)
-                    .password(password)
-                    .clientId("health-manager")
-                    .clientSecret("6ac03c55-3d4c-40dd-a89e-1adfe10fc9e0")
-                    .realm("healthcare")
-                    .resteasyClient(
-                            new ResteasyClientBuilder()
-                                    .connectionPoolSize(10).build()
-                    )
-                    .build();
-
-
-            accessToken = keycloak.tokenManager().getAccessTokenString();
-
-        }catch (Exception ex){
-            ex.printStackTrace();
-            return null;
-        }
-        return accessToken;
-    }
     /**
      * 用户登录或注册
      * @param jsonMessage
@@ -464,6 +347,114 @@ public class UsersService {
         returnMap.put("headPic", usersModel.getHeadPic());
         returnMap.put("menuList", tree.modifyStr(tree.returnStr.toString()));
         return returnMap;
+    }
+
+
+
+    public boolean createOIDCAccount(String username, String password) {
+
+        Keycloak keycloak = KeycloakBuilder.builder()
+                .serverUrl("http://auth.e-healthcare.net/auth")
+                .grantType(OAuth2Constants.PASSWORD)
+                .realm("master")
+                .clientId("admin-cli")
+                .username("admin")
+                .password("admin")
+                .resteasyClient(
+                        new ResteasyClientBuilder()
+                                .connectionPoolSize(10).build()
+                ).build();
+        RealmResource realmResource = keycloak.realm("healthcare");
+
+        UserRepresentation user = new UserRepresentation();
+        // 设置登录账号
+        user.setUsername(username);
+        // 设置账号“启用”
+        user.setEnabled(true);
+        //user.setEmail(request.getEmail());
+        user.setFirstName("zhang");
+        user.setLastName("yq");
+
+        //set password
+        List<CredentialRepresentation> credentials = new ArrayList<CredentialRepresentation>();
+        CredentialRepresentation cr = new CredentialRepresentation();
+        cr.setType(CredentialRepresentation.PASSWORD);
+        cr.setValue(password);
+        cr.setTemporary(false);
+        credentials.add(cr);
+        user.setCredentials(credentials);
+
+        //设置自定义用户属性
+        Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+        List<String> list = new ArrayList<String>();
+        list.add("音乐");
+        list.add("美术");
+        attributes.put("favorite", list);
+        user.setAttributes(attributes);
+
+        // 创建用户
+        Response.StatusType result = realmResource.users().create(user).getStatusInfo();
+        String resultText = result.getReasonPhrase() + String.valueOf(result.getStatusCode());
+        if (result.getStatusCode() != 201) {
+            System.out.println("the result of create user******************" + resultText);
+            throw new ServiceException("failed to create new user!");
+        }
+
+
+        try {
+
+            // 根据 username 查找用户
+            UserRepresentation getUser = realmResource
+                    .users()
+                    .search(username)
+                    .get(0);
+
+            // 取得指定用户的 roleMappingResource
+            RoleMappingResource roleMappingResource = realmResource
+                    .users()
+                    .get(getUser.getId())
+                    .roles();
+
+            // 为用户分配Realm角色
+
+            RoleRepresentation realmRole = realmResource
+                    .roles()
+                    .get("operator")
+                    .toRepresentation();
+
+            roleMappingResource.realmLevel().add(Arrays.asList(realmRole));
+        }catch(Exception ex){
+            throw new ServiceException("failed to add role to new user!");
+        }
+
+        return true;
+    }
+
+    public String createOIDCAccessToken(String name, String password) {
+        String accessToken = null;
+        try {
+            Keycloak keycloak = KeycloakBuilder.builder()
+                    .serverUrl("http://auth.e-healthcare.net/auth")
+                    .grantType(OAuth2Constants.PASSWORD)
+                    .username(name)
+                    .password(password)
+                    .clientId("health-manager")
+                    .clientSecret("6ac03c55-3d4c-40dd-a89e-1adfe10fc9e0")
+                    .realm("healthcare")
+                    .resteasyClient(
+                            new ResteasyClientBuilder()
+                                    .connectionPoolSize(10).build()
+                    )
+                    .build();
+
+
+            accessToken = keycloak.tokenManager().getAccessTokenString();
+
+        }catch (Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+        return accessToken;
     }
 
      */

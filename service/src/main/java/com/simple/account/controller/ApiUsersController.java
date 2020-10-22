@@ -1,18 +1,20 @@
 package com.simple.account.controller;
 
 import com.simple.account.service.ApiUsersService;
-import com.simple.core.data.message.ResponseMessage;
-import com.simple.core.data.request.JsonMessage;
-import com.simple.core.exception.CommonExceptionHandle;
-//import com.simple.core.spring.interceptor.annotation.LoginRequired;
-import com.simple.common.token.ValidateLoginHelp;
+import com.simple.common.api.BaseResponse;
+import com.simple.common.api.GenericRequest;
+import com.simple.common.api.GenericResponse;
+import com.simple.common.auth.AuthConstant;
+import com.simple.common.auth.LoginRequired;
+import com.simple.common.auth.Sessions;
+import com.simple.common.controller.BaseController;
+import com.simple.common.error.ServiceHelper;
 import com.simple.account.model.RegionModel;
 import com.simple.account.vo.UserInfoVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -24,10 +26,10 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("api/userService")
-public class ApiUsersController {
+public class ApiUsersController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(ApiUsersController.class);
     @Autowired
-    private ApiUsersService     apiUsersService;
+    private ApiUsersService apiUsersService;
 
 //    /**
 //     * 验证当前用户是否登录
@@ -61,171 +63,141 @@ public class ApiUsersController {
 
     /**
      * 用户退出登录
-     * @param request
-     * @param jsonMessage
+     *
      * @return
      */
-    @PostMapping(value = { "/loginOut" }, consumes = { "application/json" }, produces = { "application/json" })
-    //@LoginRequired
-    public @ResponseBody ResponseMessage loginOut(HttpServletRequest request,
-                                                  @RequestBody JsonMessage jsonMessage) {
-        ResponseMessage responseMessage = new ResponseMessage(jsonMessage);
+    @PostMapping(value = {"/loginOut"}, consumes = {"application/json"}, produces = {"application/json"})
+    @LoginRequired
+    public @ResponseBody
+    BaseResponse logOut(@RequestBody GenericRequest req,
+                        HttpServletRequest request,
+                        HttpServletResponse response) {
         try {
-            this.apiUsersService.loginOut(jsonMessage);
-            responseMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            responseMessage.setMessage("退出成功!");
+            String domain = req.getString("domainName");
+            Sessions.logout(domain, request, response);
+            return GenericResponse.build().message("退出成功!");
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(responseMessage, jsonMessage, request, e);
+            return ServiceHelper.handleControllerException(e, "failed to logout");
         }
-        return responseMessage;
+
     }
 
     /**
      * 获取个人资料
-     * @param jsonMessage
-     * @param request
-     * @param response
+     *
      * @return
      */
-    @PostMapping(value = { "/getUserInfo" }, consumes = { "application/json" }, produces = { "application/json" })
-    //@LoginRequired
-    public @ResponseBody ResponseMessage getUserInfo(@RequestBody JsonMessage jsonMessage,
-                                                     HttpServletRequest request,
-                                                     HttpServletResponse response) {
+    @PostMapping(value = {"/getUserInfo"}, consumes = {"application/json"}, produces = {"application/json"})
+    @LoginRequired
+    public @ResponseBody
+    BaseResponse getUserInfo(@RequestBody GenericRequest req,
+                             HttpServletRequest request) {
         //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+        GenericResponse res = GenericResponse.build();
+        //ResponseMessage resMessage = new ResponseMessage(jsonMessage);
         try {
             //step1:获取用户信息
-            UserInfoVo userInfoVo = this.apiUsersService.getUserInfo(jsonMessage);
-            //step3:返回结果
-            resMessage.addKey$Value("id", userInfoVo.getId());
-            resMessage.addKey$Value("userTrueName", userInfoVo.getUserTrueName());
-            resMessage.addKey$Value("userNickName", userInfoVo.getUserNickName());
-            resMessage.addKey$Value("headPic", userInfoVo.getHeadPic());
-            resMessage.addKey$Value("userGrenderWx", userInfoVo.getUserGrenderWx());
-            resMessage.addKey$Value("provinceId", userInfoVo.getProvinceId());
-            resMessage.addKey$Value("provinceName", userInfoVo.getProvinceName());
-            resMessage.addKey$Value("cityId", userInfoVo.getCityId());
-            resMessage.addKey$Value("cityName", userInfoVo.getCityName());
-            resMessage.addKey$Value("hospitalName", userInfoVo.getHospitalName());
-            resMessage.addKey$Value("departmentName", userInfoVo.getDepartmentName());
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
+            String token = Sessions.getAuthToken(request);
+            int userId = Sessions.getSessionUserInfo(token).getId();
+            UserInfoVo userInfoVo = this.apiUsersService.getUserInfo(userId);
+            res.setDataObject(userInfoVo);
+            return res;
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            return ServiceHelper.handleControllerException(e, "failed to get userInfo");
         }
-        return resMessage;
     }
 
     /**
      * 修改个人资料
-     * @param jsonMessage
-     * @param request
-     * @param response
+     *
      * @return
      */
-    @PostMapping(value = { "/updateUserInfo" }, consumes = { "application/json" }, produces = { "application/json" })
-    //@LoginRequired
-    public @ResponseBody ResponseMessage updateUserInfo(@RequestBody JsonMessage jsonMessage,
-                                                      HttpServletRequest request,
-                                                      HttpServletResponse response) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+    @PostMapping(value = {"/updateUserInfo"}, consumes = {"application/json"}, produces = {"application/json"})
+    @LoginRequired
+    public @ResponseBody
+    BaseResponse updateUserInfo(@RequestBody GenericRequest req,
+                                HttpServletRequest request) {
         try {
             //step1:修改个人资料
-            this.apiUsersService.updateUserInfo(jsonMessage);
-            //step2:返回结果
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
+            UserInfoVo userInfo = req.getObject(UserInfoVo.class);
+            int userId = Sessions.getSessionUserInfo(Sessions.getAuthToken(request)).getId();
+            userInfo.setId(userId);
+            this.apiUsersService.updateUserInfo(userInfo);
+            return GenericResponse.build().message("successful to update user info");
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            return this.handleExeption(e, "failed to update user info");
         }
-        return resMessage;
+
     }
 
     /**
      * 验证当前用户是否填写个人信息
-     * @param jsonMessage
+     *
      * @return
      */
-    @PostMapping(value = { "/validateWriteUserInfo" }, consumes = { "application/json" }, produces = { "application/json" })
+    @PostMapping(value = {"/validateWriteUserInfo"}, consumes = {"application/json"}, produces = {"application/json"})
     //@LoginRequired
-    public @ResponseBody ResponseMessage validateWriteUserInfo(HttpServletRequest request,
-                                                               HttpServletResponse response,
-                                                               @RequestBody JsonMessage jsonMessage) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+    public @ResponseBody
+    BaseResponse validateWriteUserInfo(@RequestBody GenericRequest req,
+                                       HttpServletRequest request) {
+
         try {
-            boolean result = this.apiUsersService.validateWriteUserInfo(jsonMessage);
+            int userId = Sessions.getSessionUserInfo(Sessions.getAuthToken(request)).getId();
+            boolean result = this.apiUsersService.validateWriteUserInfo(userId);
             if (result) {
-                resMessage.addKey$Value("isWrite", 1);
-                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-                return resMessage;
+                return GenericResponse.build().addKey$Value("isWrite", 1);
             } else {
-                resMessage.addKey$Value("isWrite", 0);
-                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-                return resMessage;
+                return GenericResponse.build().addKey$Value("isWrite", 0);
             }
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            handleExeption(e, "failed to valid user info");
+            return GenericResponse.build().addKey$Value("isWrite", 0);
         }
-        return resMessage;
+
     }
 
     /**
      * 查询省市区联动
-     * @param jsonMessage
+     *
      * @param request
-     * @param response
      * @return
      */
-    @PostMapping(value = { "/getRegionList" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage getRegionList(@RequestBody JsonMessage jsonMessage,
-                                                       HttpServletRequest request,
-                                                       HttpServletResponse response) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+    @PostMapping(value = {"/getRegionList"}, consumes = {"application/json"}, produces = {"application/json"})
+    public @ResponseBody
+    BaseResponse getRegionList(@RequestBody GenericRequest req) {
+        Integer pid = req.getInteger("pid");
+        Integer level = req.getInteger("level");
+
         try {
             //step1:查询省市区信息
-            List<RegionModel> regionList = this.apiUsersService.getRegionList(jsonMessage);
+            List<RegionModel> regionList = this.apiUsersService.getRegionList(pid, level);
             //step2:返回结果
-            resMessage.addBean("regionList", regionList);
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
+            return GenericResponse.build().addKey$Value("regionList", regionList);
+
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            return this.handleExeption(e, "failed to get Region List");
         }
-        return resMessage;
+
     }
-    
-//    /**
-//     * 公众号验证当前用户是否登录
-//     * @param jsonMessage
-//     * @return
-//     */
-//    @PostMapping(value = { "/validateWechatPublicUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
-//    public @ResponseBody ResponseMessage validateWechatPublicUserLogin(HttpServletRequest request,
-//                                             HttpServletResponse response,
-//                                             @RequestBody JsonMessage jsonMessage) {
-//        //返回对象
-//        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
-//        try {
-//            ResponseMessage responseMessage = ValidateLoginHelp.validateUserLogin(jsonMessage);
-//            if (responseMessage.getStatus() == ResponseMessage.SUCCESS_CODE) {
-//                resMessage.addKey$Value("isLogin", 1);
-//                resMessage.setMessage(responseMessage.getMessage());
-//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-//                return resMessage;
-//            } else {
-//                resMessage.addKey$Value("isLogin", 0);
-//                resMessage.setMessage(responseMessage.getMessage());
-//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-//                return resMessage;
-//            }
-//        } catch (Exception e) {
-//            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
-//        }
-//        return resMessage;
-//    }
+
+
+    @PostMapping(value = {"/validateWechatPublicUserLogin"}, consumes = {"application/json"}, produces = {"application/json"})
+    public @ResponseBody
+    BaseResponse testVerify(@RequestHeader(AuthConstant.AUTHENTICATION_HEADER) String token,
+                            HttpServletRequest request,
+                            HttpServletResponse response) {
+        try {
+            GenericResponse res = GenericResponse.build();
+            if (Sessions.validateToken(token).success()) {
+                res.addKey$Value("isLogin", 1);
+            } else {
+                res.addKey$Value("isLogin", 0);
+            }
+            ;
+            return res;
+        } catch (Exception ex) {
+            return this.handleExeption(ex, "failed to verify token");
+        }
+    }
 
 }

@@ -1,7 +1,6 @@
 package com.simple.account.controller;
 
-
-import com.simple.common.api.BaseRequest;
+import com.simple.common.api.GenericResponse;
 import com.simple.common.auth.AuthConstant;
 import com.simple.common.auth.Authorize;
 import com.simple.common.auth.LoginRequired;
@@ -9,15 +8,9 @@ import com.simple.common.auth.Sessions;
 import com.simple.common.controller.BaseController;
 import com.simple.common.api.BaseResponse;
 import com.simple.common.api.GenericRequest;
-
 import com.simple.common.error.ServiceException;
-import com.simple.core.data.message.ResponseMessage;
-import com.simple.core.data.request.JsonMessage;
-import com.simple.core.exception.CommonExceptionHandle;
 import com.simple.account.service.UsersService;
-import com.simple.common.error.ServiceHelper;
 import com.simple.common.token.JwtUtils;
-import com.simple.common.token.ValidateLoginHelp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+
 
 
 @RestController
@@ -72,7 +65,7 @@ public class UsersController extends BaseController {
                             HttpServletResponse response) {
         try {
             Sessions.validateToken(token);
-            return BaseResponse.build().message(token);
+            return GenericResponse.build().addKey$Value("token",token);
         } catch (Exception ex) {
             return this.handleExeption(ex, "token is invalid");
         }

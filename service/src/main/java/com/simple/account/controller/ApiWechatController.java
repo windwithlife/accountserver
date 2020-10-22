@@ -2,10 +2,12 @@ package com.simple.account.controller;
 
 import com.simple.account.service.ApiUsersService;
 import com.simple.account.service.ApiWechatService;
-import com.simple.core.data.message.ResponseMessage;
-import com.simple.core.data.request.JsonMessage;
-import com.simple.core.exception.CommonExceptionHandle;
-import com.simple.core.wechat.AdvancedUtil;
+import com.simple.common.api.BaseResponse;
+import com.simple.common.api.GenericRequest;
+import com.simple.common.api.GenericResponse;
+import com.simple.common.auth.Sessions;
+import com.simple.common.controller.BaseController;
+import com.simple.common.wechat.AdvancedUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("api/wechatService")
-public class ApiWechatController {
+public class ApiWechatController  extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(ApiWechatController.class);
     @Autowired
     private ApiWechatService    apiWechatService;
@@ -28,32 +30,28 @@ public class ApiWechatController {
 
     /**
      * 根据code获取微信openId
-     * @param request
-     * @param jsonMessage
      * @return
      */
     @PostMapping(value = { "/getWechatOpenId" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage getWechatOpenId(HttpServletRequest request,
-                                                         @RequestBody JsonMessage jsonMessage) {
+    public @ResponseBody BaseResponse getWechatOpenId(@RequestBody GenericRequest req) {
         //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+        GenericResponse res = GenericResponse.build();
         //step1:参数验证
-        String code = jsonMessage.getString("code");
+        String code = req.getString("code");
         if (StringUtils.isBlank(code)) {
-            resMessage.setMessage("微信code不能为空!");
-            return resMessage;
+            return res.message("微信code不能为空!");
         }
         try {
             //step2:获取openId
             String openId = this.apiWechatService.getWechatOpenId(code);
             //step3:返回结果
-            resMessage.addKey$Value("openId", openId);
-            resMessage.setMessage("获取微信openId成功!");
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
+            res.addKey$Value("openId", openId);
+            return res.message("获取微信openId成功!");
+
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            return this.handleExeption(e, "failed to get wechat OpenId");
         }
-        return resMessage;
+
     }
 
     /**
@@ -64,76 +62,66 @@ public class ApiWechatController {
      * @return
      */
     @PostMapping(value = { "/registerUser" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage registerUser(@RequestBody JsonMessage jsonMessage,
+    public @ResponseBody BaseResponse registerUser(@RequestBody GenericRequest req,
                                                       HttpServletRequest request,
                                                       HttpServletResponse response) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
         try {
             //step1:用户注册或登录
-            Map<String, Object> resultMap = this.apiUsersService.registerUser(jsonMessage);
+            String domainName  = req.getString("domain");
+            Map<String, Object> resultMap = this.apiUsersService.registerUser(req);
             //step3:返回结果
-            resMessage.addKey$Value("openId", resultMap.get("openId"));
-            resMessage.addKey$Value("token", resultMap.get("token"));
-            resMessage.addKey$Value("isNewUser", resultMap.get("isNewUser"));
-            resMessage.addKey$Value("newUserMessage", resultMap.get("newUserMessage"));
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
+            Sessions.writeToken((String)resultMap.get("token"),domainName,true,response);
+            return GenericResponse.build().addKey$Value("openId", resultMap.get("openId"))
+                   .addKey$Value("token", resultMap.get("token"))
+                   .addKey$Value("isNewUser", resultMap.get("isNewUser"))
+                   .addKey$Value("newUserMessage", resultMap.get("newUserMessage"));
+
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            return this.handleExeption(e,"failed to register wechat user");
         }
-        return resMessage;
     }
     
     /**
      * 获取微信用户授权url
-     * @param jsonMessage
      * @param request
-     * @param response
      * @return
      */
     @PostMapping(value = { "/getWechatPublicOauthUrl" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage getWechatOauthUrl(@RequestBody JsonMessage jsonMessage,
-                                                      HttpServletRequest request,
-                                                      HttpServletResponse response) {
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+    public @ResponseBody
+    BaseResponse getWechatOauthUrl(@RequestBody GenericRequest req,
+                                   HttpServletRequest request) {
+
         //step  1:获取请求参数
-        String href = jsonMessage.getString("href");
+        String href = req.getString("href");
         if (StringUtils.isBlank(href)) {
-            resMessage.setMessage("请求参数href不能为空!");
-            return resMessage;
+            return BaseResponse.build().message("请求参数href不能为空!");
         }
         //step  2:获取微信授权请求url地址
         String url = AdvancedUtil.getOauth2AccessTokenUrl("snsapi_userinfo", href);
-        resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-        resMessage.addKey$Value("oauthUrl", url);
-        return resMessage;
+        return GenericResponse.build().addKey$Value("oauthUrl", url);
     }
     
     /**
      * 微信公众号授权登录或注册
-     * @param jsonMessage
-     * @param request
      * @param response
      * @return
      */
     @PostMapping(value = { "/registerWechatPublicUser" }, consumes = { "application/json" }, produces = { "application/json" })
-    public @ResponseBody ResponseMessage registerWechatPublicUser(@RequestBody JsonMessage jsonMessage,
-                                                      HttpServletRequest request,
-                                                      HttpServletResponse response) {
-        //返回对象
-        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
+    public @ResponseBody BaseResponse registerWechatPublicUser(@RequestBody GenericRequest req,
+                                                                  HttpServletRequest request,
+                                                                  HttpServletResponse response) {
         try {
             //step1:用户注册或登录
-            Map<String, Object> resultMap = this.apiUsersService.registerWechatPublicUser(jsonMessage);
+            String domainName  = req.getString("domain");
+            Map<String, Object> resultMap = this.apiUsersService.registerWechatPublicUser(req);
             //step3:返回结果
-            resMessage.addKey$Value("openId", resultMap.get("openId"));
-            resMessage.addKey$Value("token", resultMap.get("token"));
-            resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-            resMessage.setMessage(ResponseMessage.SUCCESS_MESSAGE);
+            String token = (String)resultMap.get("token");
+            Sessions.writeToken(token,domainName,true,response);
+            return GenericResponse.build().addKey$Value("openId", resultMap.get("openId"))
+                    .addKey$Value("token", resultMap.get("token"));
+
         } catch (Exception e) {
-            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
+            return this.handleExeption(e,"failed to register wechat public user");
         }
-        return resMessage;
     }
 }

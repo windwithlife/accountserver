@@ -1,17 +1,19 @@
 package com.simple.account.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.simple.common.util.TokenProccessor;
-import com.simple.common.util.WechatUtil;
-import com.simple.core.data.request.JsonMessage;
+import com.simple.common.api.GenericRequest;
+import com.simple.common.auth.Sessions;
+import com.simple.common.redis.SimpleRedisClient;
+import com.simple.common.utils.TokenProccessor;
+import com.simple.common.utils.WechatUtil;
+import com.simple.common.data.request.JsonMessage;
 import com.simple.common.token.DesTokenUtil;
 import com.simple.common.error.ServiceException;
-import com.simple.core.redis.JedisDBEnum;
-import com.simple.core.redis.JedisHelper;
-import com.simple.common.token.UserTokenHelp;
-import com.simple.core.wechat.AdvancedUtil;
-import com.simple.core.wechat.beans.oauth2.Oauth2AccessToken;
-import com.simple.core.wechat.beans.oauth2.WechatUserInfo;
+import com.simple.common.redis.JedisDBEnum;
+import com.simple.common.redis.JedisHelper;
+import com.simple.common.wechat.AdvancedUtil;
+import com.simple.common.wechat.beans.oauth2.Oauth2AccessToken;
+import com.simple.common.wechat.beans.oauth2.WechatUserInfo;
 import com.simple.account.dao.UserDetailDao;
 import com.simple.account.dao.UsersDao;
 import com.simple.account.model.RegionModel;
@@ -30,11 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 用户管理业务层
- * @author hejinguo
- * @version $Id: UsersService.java, v 0.1 2019年11月17日 下午9:51:48
- */
 @Service
 public class ApiUsersService {
     private static final Logger logger = LoggerFactory.getLogger(ApiUsersService.class);
@@ -50,7 +47,7 @@ public class ApiUsersService {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-    public Map<String, Object> registerUser(JsonMessage jsonMessage) throws Exception {
+    public Map<String, Object> registerUser(GenericRequest jsonMessage) throws Exception {
         //返回信息
         Map<String, Object> returnMap = new HashMap<String, Object>();
         //step1:获取全部请求参数并验证
@@ -100,7 +97,8 @@ public class ApiUsersService {
                 JedisHelper.getInstance().del(oldToken, JedisDBEnum.WECHAT);
             }
             //新token以及加密值
-            String newToken = TokenProccessor.getInstance().makeToken();
+            //String newToken = TokenProccessor.getInstance().makeToken();
+            String newToken = Sessions.createTokenWithUserInfo(userId,String.valueOf(userId), openId,"guest");
             String value = DesTokenUtil.encrypt(usersModel.getUserId() + "," + newToken);
             //step4:修改用户资料信息
             Map<String, Object> userParamMap = new HashMap<String, Object>();
@@ -132,8 +130,11 @@ public class ApiUsersService {
                 userGrenderWx, userCountryWx, userProvinceWx, userCityWx, userMobile);
             this.usersDao.insertUserDetail(userDetail);
             //step8:存入到redis
-            String value = DesTokenUtil.encrypt(user.getUserId() + "," + userToken);
-            JedisHelper.getInstance().set(userToken, value, JedisDBEnum.WECHAT);
+            Integer  userId = user.getUserId();
+            String newToken = Sessions.createTokenWithUserInfo(userId,String.valueOf(userId),openId,"guest");
+
+            //String value = DesTokenUtil.encrypt(user.getUserId() + "," + newToken);
+            //JedisHelper.getInstance().set(userToken, value, JedisDBEnum.WECHAT);
             //step9:返回信息
             returnMap.put("openId", openId);
             returnMap.put("token", userToken);
@@ -162,12 +163,8 @@ public class ApiUsersService {
      * @return
      * @throws Exception
      */
-    public UserInfoVo getUserInfo(JsonMessage jsonMessage) throws Exception {
+    public UserInfoVo getUserInfo(int userId) throws Exception {
         String token = "";//jsonMessage.getToken();
-        if (StringUtils.isBlank(token)) {
-            throw new ServiceException("未获取到用户token信息");
-        }
-        int userId = UserTokenHelp.getWechatUserId(token);
         UserInfoVo userInfoVo = this.usersDao.getUserInfo(userId);
         return userInfoVo;
     }
@@ -177,35 +174,24 @@ public class ApiUsersService {
      * @param jsonMessage
      * @throws Exception
      */
-    public void updateUserInfo(JsonMessage jsonMessage) throws Exception {
-        //step1:信息转换
-        String token = "";//jsonMessage.getToken();
-        int userId = UserTokenHelp.getWechatUserId(token);
-        UserInfoVo userInfoVo = JSONObject.toJavaObject(jsonMessage.getData(), UserInfoVo.class);
-        userInfoVo.setId(userId);
-        UsersModel.validateUpdateUserInfoParam(userInfoVo);
+    public void updateUserInfo(UserInfoVo userInfo) throws Exception {
+        UsersModel.validateUpdateUserInfoParam(userInfo);
         //step2:修改用户及明细信息
-        UsersModel usersModel = this.usersDao.getUsersModel(userInfoVo.getId());
+        UsersModel usersModel = this.usersDao.getUsersModel(userInfo.getId());
         if (usersModel == null) {
             throw new ServiceException("用户信息不存在!");
         }
-        this.usersDao.updateUserInfo(userInfoVo);
+        this.usersDao.updateUserInfo(userInfo);
         //step3:修改用户明细信息
-        this.userDetailDao.updateUserDetailInfo(userInfoVo);
+        this.userDetailDao.updateUserDetailInfo(userInfo);
     }
 
     /**
      * 验证当前用户是否填写个人信息
-     * @param jsonMessage
      * @return
      */
-    public boolean validateWriteUserInfo(JsonMessage jsonMessage) {
+    public boolean validateWriteUserInfo(int userId) {
         boolean result = false;
-        String token = "";//jsonMessage.getToken();
-        if (StringUtils.isBlank(token)) {
-            throw new ServiceException("未获取到用户token信息");
-        }
-        int userId = UserTokenHelp.getWechatUserId(token);
         //step1:查询用户信息
         UsersModel usersModel = this.usersDao.getUsersModel(userId);
         UsersModel.validateUserStatus(usersModel);
@@ -233,10 +219,10 @@ public class ApiUsersService {
      * @return
      * @throws Exception
      */
-    public List<RegionModel> getRegionList(JsonMessage jsonMessage) throws Exception {
-        //step1:获取请求参数
-        Integer pid = jsonMessage.getInteger("pid");
-        Integer level = jsonMessage.getInteger("level");
+    public List<RegionModel> getRegionList(Integer pid, Integer level) throws Exception {
+//        //step1:获取请求参数
+//        Integer pid = jsonMessage.getInteger("pid");
+//        Integer level = jsonMessage.getInteger("level");
         if (pid == null || pid == 0) {
             pid = 100000;
             level = 1;
@@ -257,7 +243,7 @@ public class ApiUsersService {
     * @throws Exception
     */
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-    public Map<String, Object> registerWechatPublicUser(JsonMessage jsonMessage) throws Exception {
+    public Map<String, Object> registerWechatPublicUser(GenericRequest jsonMessage) throws Exception {
         //返回信息
         Map<String, Object> returnMap = new HashMap<String, Object>();
         //step1:获取全部请求参数并验证
@@ -289,9 +275,11 @@ public class ApiUsersService {
             throw new ServiceException("微信授权登录失败,请重新打开页面!");
         }
         //step4:请求带有token，则直接清除
-        String token = "";//jsonMessage.getToken();
+        //String token = jsonMessage.getToken();
+        String token = Sessions.getAuthToken(Sessions.getCurrentRequest());
         if (StringUtils.isNotBlank(token)) {
-            JedisHelper.getInstance().del(token, JedisDBEnum.WECHAT);
+            //JedisHelper.getInstance().del(token, JedisDBEnum.WECHAT);
+            SimpleRedisClient.templateInstance.delete(token);
         }
         //step3:根据手机号查询用户信息
         Map<String, String> paraMap = new HashMap<String, String>();
@@ -308,29 +296,30 @@ public class ApiUsersService {
                     userStatus);
                 throw new ServiceException("当前账户非正常状态!");
             }
-            String oldToken = usersModel.getUserToken();
-            //删除旧token
-            if (StringUtils.isNotBlank(oldToken)) {
-                JedisHelper.getInstance().del(oldToken, JedisDBEnum.WECHAT);
-            }
-            //新token以及加密值
-            String newToken = TokenProccessor.getInstance().makeToken();
-            String value = DesTokenUtil.encrypt(usersModel.getUserId() + "," + newToken);
-            //step4:修改用户资料信息
-            Map<String, Object> userParamMap = new HashMap<String, Object>();
-            userParamMap.put("userId", userId);
-            userParamMap.put("userToken", newToken);
-            this.usersDao.updateUserToken(userParamMap);
-            if (userInfo != null) {
-                Map<String, Object> usersMap = new HashMap<String, Object>();
-                usersMap.put("userId", userId);
-                usersMap.put("headPic", userInfo.getHeadimgurl());
-                usersMap.put("userNickName", userInfo.getNickname());
-                usersMap.put("updatedName", userInfo.getNickname());
-                this.usersDao.updateUserNickName(usersMap);
-            }
-            //step5:存入到redis
-            JedisHelper.getInstance().set(newToken, value, JedisDBEnum.WECHAT);
+//            String oldToken = usersModel.getUserToken();
+//            //删除旧token
+//            if (StringUtils.isNotBlank(oldToken)) {
+//                JedisHelper.getInstance().del(oldToken, JedisDBEnum.WECHAT);
+//            }
+//            //新token以及加密值
+//            String newToken = TokenProccessor.getInstance().makeToken();
+//            String value = DesTokenUtil.encrypt(usersModel.getUserId() + "," + newToken);
+//            //step4:修改用户资料信息
+//            Map<String, Object> userParamMap = new HashMap<String, Object>();
+//            userParamMap.put("userId", userId);
+//            userParamMap.put("userToken", newToken);
+//            this.usersDao.updateUserToken(userParamMap);
+//            if (userInfo != null) {
+//                Map<String, Object> usersMap = new HashMap<String, Object>();
+//                usersMap.put("userId", userId);
+//                usersMap.put("headPic", userInfo.getHeadimgurl());
+//                usersMap.put("userNickName", userInfo.getNickname());
+//                usersMap.put("updatedName", userInfo.getNickname());
+//                this.usersDao.updateUserNickName(usersMap);
+//            }
+//            //step5:存入到redis
+//            JedisHelper.getInstance().set(newToken, value, JedisDBEnum.WECHAT);
+            String newToken = Sessions.createTokenWithUserInfo(userId,String.valueOf(userId),openId,"guest");
             //step6:返回信息
             returnMap.put("openId", openId);
             returnMap.put("token", newToken);
@@ -347,11 +336,13 @@ public class ApiUsersService {
                 userInfo.getCity(), null);
             this.usersDao.insertUserDetail(userDetail);
             //step8:存入到redis
-            String value = DesTokenUtil.encrypt(user.getUserId() + "," + userToken);
-            JedisHelper.getInstance().set(userToken, value, JedisDBEnum.WECHAT);
+//            String value = DesTokenUtil.encrypt(user.getUserId() + "," + userToken);
+//            JedisHelper.getInstance().set(userToken, value, JedisDBEnum.WECHAT);
+            Integer userId = user.getUserId();
+            String newToken = Sessions.createTokenWithUserInfo(userId,String.valueOf(userId),openId,"guest");
             //step9:返回信息
             returnMap.put("openId", openId);
-            returnMap.put("token", userToken);
+            returnMap.put("token", newToken);
         }
         return returnMap;
     }
