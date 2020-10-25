@@ -11,6 +11,8 @@ import com.simple.common.controller.BaseController;
 import com.simple.common.error.ServiceHelper;
 import com.simple.account.model.RegionModel;
 import com.simple.account.vo.UserInfoVo;
+import com.simple.common.props.AppProps;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
-/**
- * 用户管理控制层
- * @author hejinguo
- * @version $Id: UsersController.java, v 0.1 2020年7月13日 上午11:10:13
- */
+
 @RestController
 @RequestMapping("api/userService")
 public class ApiUsersController extends BaseController {
@@ -31,35 +29,30 @@ public class ApiUsersController extends BaseController {
     @Autowired
     private ApiUsersService apiUsersService;
 
-//    /**
-//     * 验证当前用户是否登录
-//     * @param jsonMessage
-//     * @return
-//     */
-//    @PostMapping(value = { "/validateUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
-//    public @ResponseBody ResponseMessage validateUserLogin(HttpServletRequest request,
-//                                             HttpServletResponse response,
-//                                             @RequestBody JsonMessage jsonMessage) {
-//        //返回对象
-//        ResponseMessage resMessage = new ResponseMessage(jsonMessage);
-//        try {
-//            ResponseMessage responseMessage = ValidateLoginHelp.validateUserLogin(jsonMessage);
-//            if (responseMessage.getStatus() == ResponseMessage.SUCCESS_CODE) {
-//                resMessage.addKey$Value("isLogin", 1);
-//                resMessage.setMessage(responseMessage.getMessage());
-//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-//                return resMessage;
-//            } else {
-//                resMessage.addKey$Value("isLogin", 0);
-//                resMessage.setMessage(responseMessage.getMessage());
-//                resMessage.setStatus(ResponseMessage.SUCCESS_CODE);
-//                return resMessage;
-//            }
-//        } catch (Exception e) {
-//            CommonExceptionHandle.handleException(resMessage, jsonMessage, request, e);
-//        }
-//        return resMessage;
-//    }
+    @Autowired
+    private AppProps appProps;
+    /**
+     * 验证当前用户是否登录
+     * @param jsonMessage
+     * @return
+     */
+    @PostMapping(value = { "/validateUserLogin" }, consumes = { "application/json" }, produces = { "application/json" })
+    public @ResponseBody GenericResponse validateUserLogin(HttpServletRequest request,
+                                                           GenericRequest req) {
+
+        try {
+            if (Sessions.validateAuthentication(request)){
+                return GenericResponse.build().addKey$Value("isLogin", 1);
+            }else{
+                return GenericResponse.build().addKey$Value("isLogin", 0);
+            }
+
+        } catch (Exception e) {
+            this.handleExeption(e,"failed to validateUserLogin");
+            return GenericResponse.build().addKey$Value("isLogin", 0);
+        }
+
+    }
 
     /**
      * 用户退出登录
@@ -74,6 +67,9 @@ public class ApiUsersController extends BaseController {
                         HttpServletResponse response) {
         try {
             String domain = req.getString("domainName");
+            if (StringUtils.isBlank(domain)){
+                domain = appProps.getDomainName();
+            }
             Sessions.logout(domain, request, response);
             return GenericResponse.build().message("退出成功!");
         } catch (Exception e) {
@@ -90,7 +86,7 @@ public class ApiUsersController extends BaseController {
     @PostMapping(value = {"/getUserInfo"}, consumes = {"application/json"}, produces = {"application/json"})
     @LoginRequired
     public @ResponseBody
-    BaseResponse getUserInfo(@RequestBody GenericRequest req,
+    GenericResponse getUserInfo(@RequestBody GenericRequest req,
                              HttpServletRequest request) {
         //返回对象
         GenericResponse res = GenericResponse.build();
@@ -138,7 +134,7 @@ public class ApiUsersController extends BaseController {
     @PostMapping(value = {"/validateWriteUserInfo"}, consumes = {"application/json"}, produces = {"application/json"})
     //@LoginRequired
     public @ResponseBody
-    BaseResponse validateWriteUserInfo(@RequestBody GenericRequest req,
+    GenericResponse validateWriteUserInfo(@RequestBody GenericRequest req,
                                        HttpServletRequest request) {
 
         try {
@@ -186,9 +182,10 @@ public class ApiUsersController extends BaseController {
     BaseResponse testVerify(@RequestHeader(AuthConstant.AUTHENTICATION_HEADER) String token,
                             HttpServletRequest request,
                             HttpServletResponse response) {
+        GenericResponse res = GenericResponse.build();
         try {
-            GenericResponse res = GenericResponse.build();
-            if (Sessions.validateToken(token).success()) {
+
+            if (Sessions.validateToken(token)) {
                 res.addKey$Value("isLogin", 1);
             } else {
                 res.addKey$Value("isLogin", 0);
@@ -196,7 +193,9 @@ public class ApiUsersController extends BaseController {
             ;
             return res;
         } catch (Exception ex) {
-            return this.handleExeption(ex, "failed to verify token");
+            this.handleExeption(ex, "failed to verify token");
+            res.addKey$Value("isLogin", 0);
+            return res;
         }
     }
 

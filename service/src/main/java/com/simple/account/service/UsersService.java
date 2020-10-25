@@ -227,22 +227,6 @@ public class UsersService {
         return usersModel;
     }
 
-    /**
-     * 用户退出登录
-     * @param jsonMessage
-     * @throws Exception
-     */
-    /*
-    public void loginOut(JsonMessage jsonMessage) throws Exception {
-        String openId = jsonMessage.getOpenId();
-        String token = jsonMessage.getToken();
-        if (StringUtils.isBlank(token)) {
-            throw new ServiceException("未获取到用户的token信息");
-        }
-        JedisHelper.getInstance().del(token, JedisDBEnum.WECHAT);
-    }
-    */
-
 
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
     public String login(String username, String password) {
@@ -260,7 +244,7 @@ public class UsersService {
             throw new ServiceException("登录密码错误!");
         }
         Integer userId = usersModel.getUserId();
-        String token = Sessions.createTokenWithUserInfo(userId, String.valueOf(userId), usersModel.getWechatOpenId(), "guest");
+        String token = Sessions.createTokenWithUserInfo(String.valueOf(userId), "guest", usersModel.getWechatOpenId(), "");
         return token;
     }
     /**

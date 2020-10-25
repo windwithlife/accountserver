@@ -10,7 +10,9 @@ import com.simple.common.api.BaseResponse;
 import com.simple.common.api.GenericRequest;
 import com.simple.common.error.ServiceException;
 import com.simple.account.service.UsersService;
+import com.simple.common.props.AppProps;
 import com.simple.common.token.JwtUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class UsersController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(UsersController.class);
     @Autowired
     private UsersService usersService;
+
+    @Autowired
+    private AppProps appProps;
 
     @PostMapping(value = {"/signup"}, consumes = {"application/json"}, produces = {"application/json"})
     public @ResponseBody
@@ -49,10 +54,14 @@ public class UsersController extends BaseController {
                        HttpServletResponse response) {
         String username = req.getString("username");
         String password = req.getString("password");
+        String domain   = req.getString("domainName");
+        if (StringUtils.isBlank(domain)){
+            domain = appProps.getDomainName();
+        }
 
         //step1:pc用户登录
         String token = this.usersService.login(username, password);
-        Sessions.writeToken(token, "test.com", true, response);
+        Sessions.writeToken(token, domain, true, response);
         return BaseResponse.build();
 
 

@@ -56,9 +56,7 @@ public class ApiWechatController  extends BaseController {
 
     /**
      * 手机号授权登录或注册
-     * @param jsonMessage
      * @param request
-     * @param response
      * @return
      */
     @PostMapping(value = { "/registerUser" }, consumes = { "application/json" }, produces = { "application/json" })
